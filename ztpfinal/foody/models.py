@@ -11,12 +11,16 @@ class Ingredient(models.Model):
 
 
 class Recipe(models.Model):
+    recipe_name = models.CharField(max_length=255)
     author = models.ForeignKey(
         settings.AUTH_USER_MODEL,
         on_delete=models.CASCADE,
     )
     recipe_instructions = models.TextField()
     ingredients = models.ManyToManyField(Ingredient)
+
+    def __str__(self):
+        return self.recipe_name
 
 
 class AppUser(models.Model):

@@ -22,6 +22,7 @@ media
 .idea/**/gradle.xml
 .idea/**/libraries
 .idea
+.idea/*
 *.iws /out/
 
 # Python #
