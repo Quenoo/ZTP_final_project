@@ -40,11 +40,12 @@ class IngredientList(APIView):
         else:
             return unauthorized()
 
+
 class IngredientFind(APIView):
     def get_object(self, pk):
         try:
             return Ingredient.objects.get(pk=pk)
-        except Snippet.DoesNotExist:
+        except Ingredient.DoesNotExist:
             raise Http404
 
     def get(self, request, pk, format=None):
@@ -56,11 +57,18 @@ class IngredientFind(APIView):
 class RecipesList(APIView):
     def get(self, request, format=None):
         """
-        List all recipes
+        List all recipes or containing chosen ingredients
         """
+        ingredient_list = request.query_params.get('ingredients')
         recipes = Recipe.objects.all()
+        if ingredient_list:
+            ingredient_list = list(map(int, ingredient_list.split(',')))
+            recipes = Recipe.objects.all()
+            for ingredient_id in ingredient_list:
+                recipes = recipes.filter(ingredients=ingredient_id)
         serializer = RecipeSerializer(recipes, many=True)
         return Response(serializer.data)
+
 
 
 class RegisterView(CreateAPIView):
