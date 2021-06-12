@@ -2,7 +2,7 @@ import json
 
 from django.contrib import auth
 from django.contrib.auth import get_user_model, authenticate
-from django.http import JsonResponse, HttpResponse
+from django.http import JsonResponse, HttpResponse, Http404
 
 from rest_framework import permissions
 from rest_framework.generics import CreateAPIView
