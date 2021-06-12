@@ -26,4 +26,5 @@ urlpatterns = [
     path('register/', views.RegisterView.as_view()),
     path('login/', views.login),
     path('logout/', views.logout),
+    path('favourites', views.FavouritesList.as_view())
 ]

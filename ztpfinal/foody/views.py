@@ -19,7 +19,7 @@ def unauthorized():
 
 
 class IngredientList(APIView):
-    def get(self):
+    def get(self, request):
         """
         List all ingredients
         """
@@ -88,3 +88,11 @@ def logout(request):
     auth.logout(request)
     return JsonResponse({'msg': 'Logged out'})
 
+
+class FavouritesList(APIView):
+    def get(self, request):
+        user_id = request.query_params.get('userid')
+        user_favourites = AppUser.objects.get(original_user_id=user_id)
+        serializer = AppUserSerializer(user_favourites)
+        return Response(serializer.data)
+    # TODO add POSTing to favourites (logged-in user only)

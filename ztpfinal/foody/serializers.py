@@ -19,10 +19,11 @@ class RecipeSerializer(serializers.ModelSerializer):
 
 
 class AppUserSerializer(serializers.ModelSerializer):
+    favourite_recipes = RecipeSerializer(read_only=True, many=True, )
+
     class Meta:
         model = AppUser
         fields = "__all__"#('user', 'favourite_recipes')
-
 
 
 class UserSerializer(serializers.ModelSerializer):
@@ -34,8 +35,11 @@ class UserSerializer(serializers.ModelSerializer):
 
     def create(self, validated_data):
         user = User.objects.create(username=validated_data['username'])
+        app_user = AppUser.objects.create(user=user, original_user_id=user.id)
         user.set_password(validated_data['password'])
+        app_user.favourite_recipes.set([])
         user.save()
+        app_user.save()
 
         return user
 

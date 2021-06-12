@@ -25,4 +25,8 @@ class Recipe(models.Model):
 
 class AppUser(models.Model):
     user = models.OneToOneField(User, on_delete=models.CASCADE)
+    original_user_id = models.IntegerField()
     favourite_recipes = models.ManyToManyField(Recipe)
+
+    def __str__(self):
+        return self.user.username
