@@ -22,4 +22,6 @@ from foody import views
 urlpatterns = [
     path('ingredients/', views.IngredientList.as_view()),
     path('admin/', admin.site.urls),
+    path('ingredients/<int:pk>/', views.IngredientFind.as_view()),
+    path('recipes', views.RecipesList.as_view()),
 ]

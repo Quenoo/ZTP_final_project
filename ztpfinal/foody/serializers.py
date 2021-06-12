@@ -5,19 +5,19 @@ from .models import Recipe
 from .models import AppUser
 
 
-class IngredientSerializer(serializers.HyperlinkedModelSerializer):
+class IngredientSerializer(serializers.ModelSerializer):
     class Meta:
         model = Ingredient
-        fields = ('ingredient_name',)
+        fields = "__all__"#('pk', 'ingredient_name')#'__all__'#('pk', 'ingredient_name')
 
 
-class RecipeSerializer(serializers.HyperlinkedModelSerializer):
+class RecipeSerializer(serializers.ModelSerializer):
     class Meta:
         model = Recipe
-        fields = ('recipe_name', 'author', 'recipe_instructions', 'ingredients')
+        fields = "__all__"#('recipe_name', 'author', 'recipe_instructions')#, 'ingredients')
 
 
-class AppUserSerializer(serializers.HyperlinkedModelSerializer):
+class AppUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = AppUser
-        fields = ('user', 'favourite_recipes')
+        fields = "__all__"#('user', 'favourite_recipes')
