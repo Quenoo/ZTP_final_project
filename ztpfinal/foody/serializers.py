@@ -8,7 +8,7 @@ from .models import AppUser
 class IngredientSerializer(serializers.HyperlinkedModelSerializer):
     class Meta:
         model = Ingredient
-        fields = 'ingredient_name'
+        fields = ('ingredient_name',)
 
 
 class RecipeSerializer(serializers.HyperlinkedModelSerializer):
