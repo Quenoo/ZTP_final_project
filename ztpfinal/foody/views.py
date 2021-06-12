@@ -2,8 +2,7 @@ import json
 
 from django.contrib import auth
 from django.contrib.auth import get_user_model, authenticate
-from django.http import JsonResponse
-from django.views.decorators.csrf import csrf_exempt
+from django.http import JsonResponse, HttpResponse
 
 from rest_framework import permissions
 from rest_framework.generics import CreateAPIView
@@ -13,6 +12,10 @@ from rest_framework import status
 
 from .serializers import *
 from .models import *
+
+
+def unauthorized():
+    return HttpResponse('Unauthorized', status=401)
 
 
 class IngredientList(APIView):
@@ -28,11 +31,14 @@ class IngredientList(APIView):
         """
         Add new ingredient
         """
-        serializer = IngredientSerializer(data=request.data)
-        if serializer.is_valid():
-            serializer.save()
-            return Response(serializer.data, status=status.HTTP_201_CREATED)
-        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        if request.user.is_authenticated:
+            serializer = IngredientSerializer(data=request.data)
+            if serializer.is_valid():
+                serializer.save()
+                return Response(serializer.data, status=status.HTTP_201_CREATED)
+            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
+        else:
+            return unauthorized()
 
 
 class RegisterView(CreateAPIView):
@@ -42,7 +48,6 @@ class RegisterView(CreateAPIView):
 
 
 # TODO change to LoginView when making frontend
-@csrf_exempt
 def login(request):
     data = json.loads(request.body)
     username = data['username']
@@ -54,8 +59,9 @@ def login(request):
         auth.login(request, user)
         return JsonResponse({'user': f'{username}'})
     else:
-        return JsonResponse({'error': f'User {username} does not exist'})
+        return JsonResponse({'error': f'User {username} does not exist or incorrect password given'})
 
 
 def logout(request):
     auth.logout(request)
+    return JsonResponse({'msg': 'Logged out'})
