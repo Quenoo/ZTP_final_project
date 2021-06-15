@@ -23,6 +23,7 @@ urlpatterns = [
     path('ingredients/<int:pk>/', views.IngredientFind.as_view()),
     path('recipes', views.RecipesList.as_view()),
     path('ingredients/', views.IngredientList.as_view()),
+    path('recipe_ingredients/', views.RecipeIngredientList.as_view()),
     path('register/', views.RegisterView.as_view()),
     path('login/', views.login),
     path('logout/', views.logout),

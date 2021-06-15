@@ -14,10 +14,6 @@ from .serializers import *
 from .models import *
 
 
-def unauthorized():
-    return HttpResponse('Unauthorized', status=401)
-
-
 class IngredientList(APIView):
     def get(self, request):
         """
@@ -38,7 +34,7 @@ class IngredientList(APIView):
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
-            return unauthorized()
+            return HttpResponse(status=403)
 
 
 class IngredientFind(APIView):
@@ -54,6 +50,16 @@ class IngredientFind(APIView):
         return Response(serializer.data)
 
 
+class RecipeIngredientList(APIView):
+    def get(self, request):
+        """
+        List all recipe ingredients
+        """
+        recipe_ingredients = RecipeIngredient.objects.all()
+        serializer = RecipeIngredientSerializer(recipe_ingredients, many=True)
+        return Response(serializer.data)
+
+
 class RecipesList(APIView):
     def get(self, request, format=None):
         """
@@ -65,10 +71,20 @@ class RecipesList(APIView):
             ingredient_list = list(map(int, ingredient_list.split(',')))
             recipes = Recipe.objects.all()
             for ingredient_id in ingredient_list:
-                recipes = recipes.filter(ingredients=ingredient_id)
+                ingredient = Ingredient.objects.get(id=ingredient_id)
+                recipes = recipes.filter(ingredients=ingredient)
         serializer = RecipeSerializer(recipes, many=True)
         return Response(serializer.data)
 
+
+class FavouritesList(APIView):
+    def get(self, request):
+        user_id = request.query_params.get('userid')
+        user = User.objects.get(id=user_id)
+        user_favourites = AppUser.objects.get(user=user).favourite_recipes.all()
+        serializer = RecipeSerializer(user_favourites, many=True)
+        return Response(serializer.data)
+    # TODO add POSTing to favourites (logged-in user only)
 
 
 class RegisterView(CreateAPIView):
@@ -77,7 +93,7 @@ class RegisterView(CreateAPIView):
     serializer_class = UserSerializer
 
 
-# TODO change to LoginView when making frontend
+# TODO change
 def login(request):
     data = json.loads(request.body)
     username = data['username']
@@ -95,12 +111,3 @@ def login(request):
 def logout(request):
     auth.logout(request)
     return JsonResponse({'msg': 'Logged out'})
-
-
-class FavouritesList(APIView):
-    def get(self, request):
-        user_id = request.query_params.get('userid')
-        user_favourites = AppUser.objects.get(original_user_id=user_id)
-        serializer = AppUserSerializer(user_favourites)
-        return Response(serializer.data)
-    # TODO add POSTing to favourites (logged-in user only)
