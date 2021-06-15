@@ -15,6 +15,7 @@ Including another URLconf
 """
 from django.contrib import admin
 from django.urls import path
+from rest_framework.authtoken import views as auth_views
 
 from foody import views
 
@@ -25,7 +26,6 @@ urlpatterns = [
     path('ingredients/', views.IngredientList.as_view()),
     path('recipe_ingredients/', views.RecipeIngredientList.as_view()),
     path('register/', views.RegisterView.as_view()),
-    path('login/', views.login),
-    path('logout/', views.logout),
-    path('favourites', views.FavouritesList.as_view())
+    path('favourites', views.FavouritesList.as_view()),
+    path('api-token-auth/', auth_views.obtain_auth_token)
 ]

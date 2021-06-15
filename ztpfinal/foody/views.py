@@ -1,8 +1,5 @@
-import json
-
-from django.contrib import auth
-from django.contrib.auth import get_user_model, authenticate
-from django.http import JsonResponse, HttpResponse, Http404
+from django.contrib.auth import get_user_model
+from django.http import HttpResponse, Http404
 
 from rest_framework import permissions
 from rest_framework.generics import CreateAPIView
@@ -92,22 +89,3 @@ class RegisterView(CreateAPIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = UserSerializer
 
-
-# TODO change
-def login(request):
-    data = json.loads(request.body)
-    username = data['username']
-    password = data['password']
-
-    user = authenticate(request, username=username, password=password)
-
-    if user is not None:
-        auth.login(request, user)
-        return JsonResponse({'user': f'{username}'})
-    else:
-        return JsonResponse({'error': f'User {username} does not exist or incorrect password given'})
-
-
-def logout(request):
-    auth.logout(request)
-    return JsonResponse({'msg': 'Logged out'})

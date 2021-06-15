@@ -1,6 +1,5 @@
 from django.contrib.auth.models import User
 from rest_framework import serializers
-from rest_framework.authtoken.models import Token
 
 from .models import Ingredient, RecipeIngredient
 from .models import Recipe
@@ -33,10 +32,6 @@ class UserSerializer(serializers.ModelSerializer):
         fields = ('id', 'username', 'password')
         write_only_fields = ('password',)
         read_only_fields = ('id',)
-
-    def get_auth_token(self, obj):
-        token = Token.objects.create(user=obj)
-        return token.key
 
     def create(self, validated_data):
         user = User.objects.create(username=validated_data['username'])
