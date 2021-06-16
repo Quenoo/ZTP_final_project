@@ -46,6 +46,11 @@ class IngredientFind(APIView):
         serializer = IngredientSerializer(ingredient)
         return Response(serializer.data)
 
+    def delete(self, request, pk, format=None):
+        ingredient = self.get_object(pk)
+        ingredient.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
+
 
 class RecipeIngredientList(APIView):
     def get(self, request):
@@ -72,6 +77,23 @@ class RecipesList(APIView):
                 recipes = recipes.filter(ingredients=ingredient)
         serializer = RecipeSerializer(recipes, many=True)
         return Response(serializer.data)
+
+class RecipesFind(APIView):
+    def get_object(self, pk):
+        try:
+            return Recipe.objects.get(pk=pk)
+        except Recipe.DoesNotExist:
+            raise Http404
+
+    def get(self, request, pk, format=None):
+        recipe = self.get_object(pk)
+        serializer = RecipeSerializer(recipe)
+        return Response(serializer.data)
+
+    def delete(self, request, pk, format=None):
+        recipe = self.get_object(pk)
+        recipe.delete()
+        return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class FavouritesList(APIView):
