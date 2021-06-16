@@ -26,7 +26,8 @@ urlpatterns = [
     path('recipes/<int:pk>/', views.RecipesFind.as_view()),
     path('ingredients/', views.IngredientList.as_view()),
     path('recipe_ingredients/', views.RecipeIngredientList.as_view()),
-    path('register/', views.RegisterView.as_view()),
     path('favourites', views.FavouritesList.as_view()),
-    path('api-token-auth/', auth_views.obtain_auth_token)
+    path('register/', views.RegisterView.as_view()),
+    path('login/', auth_views.obtain_auth_token,),
+    path('logout/', views.LogoutView.as_view()),
 ]
