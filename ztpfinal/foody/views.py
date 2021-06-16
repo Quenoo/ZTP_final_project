@@ -2,6 +2,7 @@ from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import get_user_model
 from django.contrib.auth.decorators import login_required
 from django.utils.decorators import method_decorator
+from drf_yasg.utils import swagger_auto_schema
 
 from rest_framework import permissions
 from rest_framework.exceptions import PermissionDenied, NotFound
@@ -15,18 +16,25 @@ from .models import *
 
 
 class IngredientList(APIView):
+    @swagger_auto_schema(operation_description="List all ingredients",
+                         responses={200: "List of all ingredients"})
     def get(self, request):
         """
         List all ingredients
+        :return: List of all ingredients
         """
         ingredients = Ingredient.objects.all()
         serializer = IngredientSerializer(ingredients, many=True)
         return Response(serializer.data)
 
+    @swagger_auto_schema(operation_description="Add new ingredient (possible only for `staff_member`, i.e. moderator",
+                         responses={200: "if valid",
+                                    400: "if bad request"})
     @staff_member_required
     def post(self, request):
         """
-        Add new ingredient
+        Add new ingredient (possible only for `staff_member`, i.e. moderator)
+        :return: 201 if valid, 400 otherwise
         """
         serializer = IngredientSerializer(data=request.data)
         if serializer.is_valid():
@@ -42,22 +50,40 @@ class IngredientFind(APIView):
         except Ingredient.DoesNotExist:
             raise NotFound
 
+    @swagger_auto_schema(operation_description="Get single ingredient",
+                         responses={200: "if found",
+                                    404: "if not found"})
     def get(self, request, pk, format=None):
+        """
+        Get single ingredient
+        :param pk: ID of the ingredient
+        :return: Ingredient if found for given ID, 404 otherwise
+        """
         ingredient = self.get_object(pk)
         serializer = IngredientSerializer(ingredient)
         return Response(serializer.data)
 
+    @swagger_auto_schema(operation_description="Delete an ingredient (possible only for `staff_member`, i.e. moderator)",
+                         responses={204: "if no error"})
     @staff_member_required
     def delete(self, request, pk, format=None):
+        """
+        Delete an ingredient (possible only for `staff_member`, i.e. moderator)
+        :param pk: ID of the ingredient to remove
+        :return: 204 if no error
+        """
         ingredient = self.get_object(pk)
         ingredient.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class RecipeIngredientList(APIView):
+    @swagger_auto_schema(operation_description="List all ingredients (for all recipes)",
+                         responses={200: "List of recipe ingredients"})
     def get(self, request):
         """
-        List all recipe ingredients
+        List all ingredients (for all recipes)
+        :return: List of recipe ingredients
         """
         recipe_ingredients = RecipeIngredient.objects.all()
         serializer = RecipeIngredientSerializer(recipe_ingredients, many=True)
@@ -65,9 +91,14 @@ class RecipeIngredientList(APIView):
 
 
 class RecipesList(APIView):
+    @swagger_auto_schema(operation_description="List all recipes (if no `ingredients=...` in query) "
+                                               "or containing given ingredients (if `ingredients=...` present)",
+                         responses={200: "A list of either all recipes or ones with given ingredients"})
     def get(self, request, format=None):
         """
-        List all recipes or containing chosen ingredients
+        List all recipes (if no `ingredients=...` in query) or containing given ingredients (if `ingredients=...` present)
+        :param request: recipes?ingredients=1,2,3,...
+        :return: A list of either all recipes or ones with given ingredients
         """
         ingredient_list = request.query_params.get('ingredients')
         recipes = Recipe.objects.all()
@@ -89,30 +120,60 @@ class RecipesFind(APIView):
         except Recipe.DoesNotExist:
             raise NotFound
 
+    @swagger_auto_schema(operation_description="Get single recipe",
+                         responses={200: "Recipe if found for given ID, 404 otherwise"})
     def get(self, request, pk, format=None):
+        """
+        Get single recipe
+        :param pk: ID of the recipe
+        :return: Recipe if found for given ID, 404 otherwise
+        """
         recipe = self.get_object(pk)
         serializer = RecipeSerializer(recipe)
         return Response(serializer.data)
 
+    @swagger_auto_schema(operation_description="Delete a recipe (possible only for the recipe's author "
+                                               "or a `staff_member`, i.e. moderator)",
+                         responses={204: "if no error", 403: "if forbidden"})
     @method_decorator(login_required)
     def delete(self, request, pk, format=None):
+        """
+        Delete a recipe (possible only for the recipe's author or a `staff_member`, i.e. moderator)
+        :param pk: ID of the recipe to remove
+        :return: 204 if no error, 403 if forbidden
+        """
         recipe = self.get_object(pk)
-        if not (request.user == recipe.author or request.user.is_authenticated):
+        if not (request.user == recipe.author or request.user.is_staff_member):
             raise PermissionDenied
         recipe.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class FavouritesList(APIView):
+    @swagger_auto_schema(operation_description="Get favourite recipes for a user with given `user_id`",
+                         responses={200: "Favourite recipes or empty list"})
     def get(self, request):
+        """
+        Get favourite recipes for a user with given `user_id`
+        :param request: favourites?user_id=1
+        :return: Favourite recipes or empty list
+        """
         user_id = request.query_params.get('user_id')
         user = User.objects.get(id=user_id)
         user_favourites = AppUser.objects.get(user=user).favourite_recipes.all()
         serializer = RecipeSerializer(user_favourites, many=True)
         return Response(serializer.data)
 
+    @swagger_auto_schema(operation_description="Add a favourite recipe (given `recipe_id`) for user sending this"
+                                               " request",
+                         responses={200: "if no error", 400: "if no recipe_id in request"})
     @method_decorator(login_required)
     def post(self, request):
+        """
+        Add a favourite recipe (given `recipe_id`) for user sending this request
+        :param request: { "recipe_id": 1 }
+        :return: 200 if no error, 400 if no recipe_id in request
+        """
         try:
             new_favourite_recipe_id = request.data["recipe_id"]
         except KeyError:
@@ -126,19 +187,32 @@ class FavouritesList(APIView):
 
 
 class RegisterView(CreateAPIView):
+    """
+    Register user (see README)
+    """
     model = get_user_model()
     permission_classes = [permissions.AllowAny]
     serializer_class = UserSerializer
 
 
 class LogoutView(APIView):
+    @swagger_auto_schema(operation_description="Logout the current user, i.e. remove his token from the database",
+                         responses={200: "if no error"})
     @method_decorator(login_required)
     def get(self, request, format=None):
+        """
+        Logout the current user, i.e. remove his token from the database
+        :return: 200 if no error
+        """
         request.user.auth_token.delete()
         return Response(status=status.HTTP_200_OK)
 
 
 # For returning an error on @login_required redirect
 class ForbiddenView(APIView):
+    @swagger_auto_schema(operation_description="For returning an error on @login_required redirect")
     def get(self, request):
+        """
+        For returning an error on @login_required redirect
+        """
         raise PermissionDenied
