@@ -110,7 +110,36 @@ class RecipesList(APIView):
                 recipes = recipes.filter(ingredients=ingredient)
         serializer = RecipeSerializer(recipes, many=True)
         return Response(serializer.data)
-    # TODO POST recipe (remember that ingredients are RecipeIngredients with amounts etc)
+
+    @swagger_auto_schema(operation_description="Add new recipe (possible for all users)",
+                         responses={201: "if valid",
+                                    400: "if error"})
+    @method_decorator(login_required)
+    def post(self, request):
+        """
+        Add new recipe (possible for all users)
+        :return: 201 if valid, 400 otherwise
+        """
+        try:
+            request.data['author']
+        except KeyError:
+            request.data['author'] = request.user.id
+
+        recipe_serializer = RecipeSerializer(data=request.data)
+        if recipe_serializer.is_valid():
+            recipe = recipe_serializer.save()
+
+        recipe_ingredients = request.data['ingredients']
+
+        for recipe_ingredient_data in recipe_ingredients:
+            recipe_ingredient_data['recipe'] = recipe.id
+
+        recipe_ingredient_serializer = RecipeIngredientSerializer(data=recipe_ingredients, many=True)
+        if recipe_ingredient_serializer.is_valid():
+            recipe_ingredient_serializer.save()
+            return Response(recipe_ingredient_serializer.data, status=status.HTTP_201_CREATED)
+
+        return Response(recipe_ingredient_serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class RecipesFind(APIView):
