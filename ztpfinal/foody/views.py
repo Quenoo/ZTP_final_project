@@ -134,7 +134,8 @@ class RecipesFind(APIView):
 
     @swagger_auto_schema(operation_description="Delete a recipe (possible only for the recipe's author "
                                                "or a `staff_member`, i.e. moderator)",
-                         responses={204: "if no error", 403: "if forbidden"})
+                         responses={204: "if no error",
+                                    403: "if forbidden"})
     @method_decorator(login_required)
     def delete(self, request, pk, format=None):
         """
@@ -166,7 +167,8 @@ class FavouritesList(APIView):
 
     @swagger_auto_schema(operation_description="Add a favourite recipe (given `recipe_id`) for user sending this"
                                                " request",
-                         responses={200: "if no error", 400: "if no recipe_id in request"})
+                         responses={200: "if no error",
+                                    400: "if no recipe_id in request"})
     @method_decorator(login_required)
     def post(self, request):
         """
