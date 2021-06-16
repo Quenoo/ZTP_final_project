@@ -1,7 +1,7 @@
 from django.contrib.auth import get_user_model
-from django.http import HttpResponse, Http404
 
 from rest_framework import permissions
+from rest_framework.exceptions import PermissionDenied, NotFound
 from rest_framework.generics import CreateAPIView
 from rest_framework.views import APIView
 from rest_framework.response import Response
@@ -31,7 +31,7 @@ class IngredientList(APIView):
                 return Response(serializer.data, status=status.HTTP_201_CREATED)
             return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
         else:
-            return HttpResponse(status=403)
+            raise PermissionDenied
 
 
 class IngredientFind(APIView):
@@ -39,7 +39,7 @@ class IngredientFind(APIView):
         try:
             return Ingredient.objects.get(pk=pk)
         except Ingredient.DoesNotExist:
-            raise Http404
+            raise NotFound
 
     def get(self, request, pk, format=None):
         ingredient = self.get_object(pk)
@@ -89,3 +89,10 @@ class RegisterView(CreateAPIView):
     permission_classes = [permissions.AllowAny]
     serializer_class = UserSerializer
 
+
+class LogoutView(APIView):
+    permission_classes = [permissions.IsAuthenticated]
+
+    def get(self, request, format=None):
+        request.user.auth_token.delete()
+        return Response(status=status.HTTP_200_OK)
