@@ -13,6 +13,7 @@ from rest_framework import status
 
 from .serializers import *
 from .models import *
+from .errors import *
 
 
 class IngredientList(APIView):
@@ -30,7 +31,7 @@ class IngredientList(APIView):
     @swagger_auto_schema(operation_description="Add new ingredient (possible only for `staff_member`, i.e. moderator",
                          responses={200: "if valid",
                                     400: "if bad request"})
-    @staff_member_required
+    @method_decorator(staff_member_required)
     def post(self, request):
         """
         Add new ingredient (possible only for `staff_member`, i.e. moderator)
@@ -48,7 +49,7 @@ class IngredientFind(APIView):
         try:
             return Ingredient.objects.get(pk=pk)
         except Ingredient.DoesNotExist:
-            raise NotFound
+            raise NoModelWithAtrubute("Ingredient", "pk", pk)
 
     @swagger_auto_schema(operation_description="Get single ingredient",
                          responses={200: "if found",
@@ -65,7 +66,7 @@ class IngredientFind(APIView):
 
     @swagger_auto_schema(operation_description="Delete an ingredient (possible only for `staff_member`, i.e. moderator)",
                          responses={204: "if no error"})
-    @staff_member_required
+    @method_decorator(staff_member_required)
     def delete(self, request, pk, format=None):
         """
         Delete an ingredient (possible only for `staff_member`, i.e. moderator)
@@ -103,7 +104,11 @@ class RecipesList(APIView):
         ingredient_list = request.query_params.get('ingredients')
         recipes = Recipe.objects.all()
         if ingredient_list:
-            ingredient_list = list(map(int, ingredient_list.split(',')))
+            try:
+                ingredient_list = list(map(int, ingredient_list.split(',')))
+            except ValueError:
+                ingredient_list = []
+
             recipes = Recipe.objects.all()
             for ingredient_id in ingredient_list:
                 ingredient = Ingredient.objects.get(id=ingredient_id)
@@ -129,7 +134,10 @@ class RecipesList(APIView):
         if recipe_serializer.is_valid():
             recipe = recipe_serializer.save()
 
-        recipe_ingredients = request.data['ingredients']
+        try:
+            recipe_ingredients = request.data['ingredients']
+        except KeyError:
+            raise NoModelWithAtrubute('ingredients')
 
         for recipe_ingredient_data in recipe_ingredients:
             recipe_ingredient_data['recipe'] = recipe.id
@@ -147,7 +155,7 @@ class RecipesFind(APIView):
         try:
             return Recipe.objects.get(pk=pk)
         except Recipe.DoesNotExist:
-            raise NotFound
+            raise NoModelWithAtrubute("Recipe", "pk", pk)
 
     @swagger_auto_schema(operation_description="Get single recipe",
                          responses={200: "Recipe if found for given ID, 404 otherwise"})
@@ -170,7 +178,7 @@ class RecipesFind(APIView):
         """
         Delete a recipe (possible only for the recipe's author or a `staff_member`, i.e. moderator)
         :param pk: ID of the recipe to remove
-        :return: 204 if no error, 403 if forbidden
+        :return: 204 if no error, 403 if forbidden, 400 if there is no recipe with gicen id
         """
         recipe = self.get_object(pk)
         if not (request.user == recipe.author or request.user.is_staff_member):
@@ -208,11 +216,15 @@ class FavouritesList(APIView):
         try:
             new_favourite_recipe_id = request.data["recipe_id"]
         except KeyError:
-            return Response("Field `recipe_id` in body is required", status=status.HTTP_400_BAD_REQUEST)
+            raise NoFieldInBody("recipe_id")
+
 
         app_user_user = User.objects.get(username=request.user)
         app_user = AppUser.objects.get(user=app_user_user)
-        new_favourite_recipe = Recipe.objects.get(pk=new_favourite_recipe_id)
+        try:
+            new_favourite_recipe = Recipe.objects.get(pk=new_favourite_recipe_id)
+        except Recipe.DoesNotExist:
+            raise NoModelWithAtrubute("Recipe", "pk", new_favourite_recipe_id)
         app_user.favourite_recipes.add(new_favourite_recipe)
         return Response(status=status.HTTP_200_OK)
 
