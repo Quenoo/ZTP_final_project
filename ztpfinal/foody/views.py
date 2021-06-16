@@ -1,4 +1,7 @@
+from django.contrib.admin.views.decorators import staff_member_required
 from django.contrib.auth import get_user_model
+from django.contrib.auth.decorators import login_required
+from django.utils.decorators import method_decorator
 
 from rest_framework import permissions
 from rest_framework.exceptions import PermissionDenied, NotFound
@@ -20,18 +23,16 @@ class IngredientList(APIView):
         serializer = IngredientSerializer(ingredients, many=True)
         return Response(serializer.data)
 
+    @staff_member_required
     def post(self, request):
         """
         Add new ingredient
         """
-        if request.user.is_authenticated:
-            serializer = IngredientSerializer(data=request.data)
-            if serializer.is_valid():
-                serializer.save()
-                return Response(serializer.data, status=status.HTTP_201_CREATED)
-            return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
-        else:
-            raise PermissionDenied
+        serializer = IngredientSerializer(data=request.data)
+        if serializer.is_valid():
+            serializer.save()
+            return Response(serializer.data, status=status.HTTP_201_CREATED)
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class IngredientFind(APIView):
@@ -46,6 +47,7 @@ class IngredientFind(APIView):
         serializer = IngredientSerializer(ingredient)
         return Response(serializer.data)
 
+    @staff_member_required
     def delete(self, request, pk, format=None):
         ingredient = self.get_object(pk)
         ingredient.delete()
@@ -77,44 +79,49 @@ class RecipesList(APIView):
                 recipes = recipes.filter(ingredients=ingredient)
         serializer = RecipeSerializer(recipes, many=True)
         return Response(serializer.data)
+    # TODO POST recipe (remember that ingredients are RecipeIngredients with amounts etc)
+
 
 class RecipesFind(APIView):
     def get_object(self, pk):
         try:
             return Recipe.objects.get(pk=pk)
         except Recipe.DoesNotExist:
-            raise Http404
+            raise NotFound
 
     def get(self, request, pk, format=None):
         recipe = self.get_object(pk)
         serializer = RecipeSerializer(recipe)
         return Response(serializer.data)
 
+    @method_decorator(login_required)
     def delete(self, request, pk, format=None):
         recipe = self.get_object(pk)
+        if not (request.user == recipe.author or request.user.is_authenticated):
+            raise PermissionDenied
         recipe.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
 
 
 class FavouritesList(APIView):
     def get(self, request):
-        user_id = request.query_params.get('userid')
+        user_id = request.query_params.get('user_id')
         user = User.objects.get(id=user_id)
         user_favourites = AppUser.objects.get(user=user).favourite_recipes.all()
         serializer = RecipeSerializer(user_favourites, many=True)
         return Response(serializer.data)
-    # TODO add POSTing to favourites (logged-in user only)
 
+    @method_decorator(login_required)
     def post(self, request):
         try:
-            new_fauvorite_recipe_id = request.data["recipeid"]
-        except:
-            return Response("Recipeid in body is required", status=status.HTTP_400_BAD_REQUEST)
+            new_favourite_recipe_id = request.data["recipe_id"]
+        except KeyError:
+            return Response("Field `recipe_id` in body is required", status=status.HTTP_400_BAD_REQUEST)
 
-        appuser_user = User.objects.get(username=request.user)
-        appuser = AppUser.objects.get(user=appuser_user)
-        new_fauvorite_recipe = Recipe.objects.get(pk=new_fauvorite_recipe_id)
-        appuser.favourite_recipes.add(new_fauvorite_recipe)
+        app_user_user = User.objects.get(username=request.user)
+        app_user = AppUser.objects.get(user=app_user_user)
+        new_favourite_recipe = Recipe.objects.get(pk=new_favourite_recipe_id)
+        app_user.favourite_recipes.add(new_favourite_recipe)
         return Response(status=status.HTTP_200_OK)
 
 
@@ -125,8 +132,13 @@ class RegisterView(CreateAPIView):
 
 
 class LogoutView(APIView):
-    permission_classes = [permissions.IsAuthenticated]
-
+    @method_decorator(login_required)
     def get(self, request, format=None):
         request.user.auth_token.delete()
         return Response(status=status.HTTP_200_OK)
+
+
+# For returning an error on @login_required redirect
+class ForbiddenView(APIView):
+    def get(self, request):
+        raise PermissionDenied

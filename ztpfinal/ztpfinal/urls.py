@@ -43,5 +43,6 @@ urlpatterns = [
     path('register/', views.RegisterView.as_view()),
     path('login/', auth_views.obtain_auth_token,),
     path('logout/', views.LogoutView.as_view()),
+    path('forbidden/', views.ForbiddenView.as_view()),
     # path('api-docs/', schema_view.with_ui('swagger', cache_timeout=0))
 ]
