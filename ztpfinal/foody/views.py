@@ -105,6 +105,18 @@ class FavouritesList(APIView):
         return Response(serializer.data)
     # TODO add POSTing to favourites (logged-in user only)
 
+    def post(self, request):
+        try:
+            new_fauvorite_recipe_id = request.data["recipeid"]
+        except:
+            return Response("Recipeid in body is required", status=status.HTTP_400_BAD_REQUEST)
+
+        appuser_user = User.objects.get(username=request.user)
+        appuser = AppUser.objects.get(user=appuser_user)
+        new_fauvorite_recipe = Recipe.objects.get(pk=new_fauvorite_recipe_id)
+        appuser.favourite_recipes.add(new_fauvorite_recipe)
+        return Response(status=status.HTTP_200_OK)
+
 
 class RegisterView(CreateAPIView):
     model = get_user_model()
