@@ -3,10 +3,11 @@
 ## Requirements
 
 * Python 3.6+
-* Django and Django REST Framework:
+* Django and Django REST Framework
+* DRF-YASG (Yet Another Swagger Generator)
 
 ```bash
-pip install django djangorestframework
+pip install django djangorestframework drf-yasg
 ```
 
 ## Run app
@@ -51,3 +52,7 @@ To use the protected endpoints (mostly POST), you will need to include the follo
 ```
 Authorization: Token <YOUR_TOKEN>
 ```
+
+### Documentation
+
+The Swagger API documentation is available at `/api-docs/`.
