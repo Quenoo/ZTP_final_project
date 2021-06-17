@@ -181,7 +181,7 @@ class RecipesFind(APIView):
         :return: 204 if no error, 403 if forbidden, 400 if there is no recipe with gicen id
         """
         recipe = self.get_object(pk)
-        if not (request.user == recipe.author or request.user.is_staff_member):
+        if not (request.user == recipe.author or request.user.is_staff):
             raise PermissionDenied
         recipe.delete()
         return Response(status=status.HTTP_204_NO_CONTENT)
@@ -217,7 +217,6 @@ class FavouritesList(APIView):
             new_favourite_recipe_id = request.data["recipe_id"]
         except KeyError:
             raise NoFieldInBody("recipe_id")
-
 
         app_user_user = User.objects.get(username=request.user)
         app_user = AppUser.objects.get(user=app_user_user)
