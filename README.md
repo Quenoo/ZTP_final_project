@@ -24,13 +24,13 @@ To run the app, use this command:
 [ZTP_final_project/ztpfinal] $ python manage.py runserver
 ```
 
-The site will be available on [localhost:8080](http://localhost:8080).
+The site will be available on [localhost:8000](http://localhost:8000).
 
 ### Authentication
 
-The app currently uses bearer token authentication provided by Django Rest Framework.
+The app currently uses bearer token authentication provided by Django REST Framework.
 
-In order to create a user, send a JSON request to the `localhost:8000/register/` endpoint in the following form:
+In order to create a user, send a JSON POST request to the `localhost:8000/register/` endpoint in the following form:
 
 ```json
 {
@@ -39,7 +39,7 @@ In order to create a user, send a JSON request to the `localhost:8000/register/`
 }
 ```
 
-The user is now created. In order to get the authentication token, send a request in the same form to `localhost:8000/login/`.
+The user is now created. In order to get the authentication token, send a request in the same form (JSON POST, same fields) to `localhost:8000/login/`.
 If the credentials are correct, you should get a response like this:
 
 ```json
